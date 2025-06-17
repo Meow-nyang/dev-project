@@ -1,60 +1,102 @@
-name: Deploy MSA Services to ECR
+name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'user-service/**'
-      - 'board-service/**'
-      - 'product-service/**'
-      - 'config-service/**'
-      - 'discovery-service/**'
-      - 'gateway-service/**'
-      - 'transaction-service/**'
+    branches: [main]
+
+env:
+  ECR_URL: 780274834139.dkr.ecr.ap-northeast-2.amazonaws.com
+  REGION: ap-northeast-2
+  DEPLOY_HOST: 172.31.6.46
+  SERVICE_DIRS: config-service,discovery-service,gateway-service,user-service,board-service,product-service,transaction-service
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        service: 
-          - user-service
-          - board-service
-          - product-service
-          - config-service
-          - discovery-service
-          - gateway-service
-          - transaction-service
-
-    env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: 17
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Add Secret YML to Config Service
+        run: |
+          echo "${{ secrets.APP_DEV_YML }}" > config-service/src/main/resources/application-dev.yml
+
+      - name: Detect Changed Services
+        id: detect
+        run: |
+          SERVICE_DIRS=(${{ env.SERVICE_DIRS }})
+          CHANGED_SERVICES=()
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+
+          if [ "$COMMIT_COUNT" -eq 1 ]; then
+            echo "Initial commit detected. All services will be built."
+            CHANGED_SERVICES=("${SERVICE_DIRS[@]}")
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+            echo "Changed files: $CHANGED_FILES"
+            for service in "${SERVICE_DIRS[@]}"; do
+              if echo "$CHANGED_FILES" | grep -q "^$service/"; then
+                CHANGED_SERVICES+=("$service")
+              fi
+            done
+          fi
+
+          echo "CHANGED_SERVICES=${CHANGED_SERVICES[*]}" >> $GITHUB_ENV
+          echo "changed_services=${CHANGED_SERVICES[*]}" >> $GITHUB_OUTPUT
+
+      - name: Build Changed Services
+        if: steps.detect.outputs.changed_services != ''
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ steps.detect.outputs.changed_services }}"
+          for service in "${SERVICES[@]}"; do
+            echo "Building $service"
+            cd "$service"
+            chmod +x gradlew
+            ./gradlew clean build -x test
+            cd -
+          done
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.REGION }}
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Conditionally build and push Docker image
-        if: ${{ github.event.head_commit.message == '' || contains(github.event.head_commit.message, matrix.service) }}
+      - name: Build & Push Docker Images
+        if: steps.detect.outputs.changed_services != ''
         run: |
-          IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ matrix.service }}
-          echo "🔨 Building and pushing image: $IMAGE_URI"
-          docker build -t $IMAGE_URI ${{ matrix.service }}
-          docker push $IMAGE_URI
+          IFS=',' read -ra SERVICES <<< "${{ steps.detect.outputs.changed_services }}"
+          for service in "${SERVICES[@]}"; do
+            docker build -t "$service:latest" "$service"
+            docker tag "$service:latest" "$ECR_URL/$service:latest"
+            docker push "$ECR_URL/$service:latest"
+          done
+
+      - name: Deploy to EC2 via SSH
+        if: steps.detect.outputs.changed_services != ''
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            echo "Login to ECR"
+            aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_URL }}
+
+            echo "Update docker-compose.yml"
+            echo "${{ secrets.DOCKER_COMPOSE_YML }}" > docker-compose.yml
+
+            echo "Deploying services"
+            docker-compose pull ${{ steps.detect.outputs.changed_services }}
+            docker-compose up -d ${{ steps.detect.outputs.changed_services }}
