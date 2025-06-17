@@ -1,39 +1,18 @@
-name: Deploy MSA Services to ECR
+name: Deploy All Services to ECR
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'user-service/**'
-      - 'board-service/**'
-      - 'product-service/**'
-      - 'config-service/**'
-      - 'discovery-service/**'
-      - 'gateway-service/**'
-      - 'transaction-service/**'
+    branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  build-and-push-all:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        service: 
-          - user-service
-          - board-service
-          - product-service
-          - config-service
-          - discovery-service
-          - gateway-service
-          - transaction-service
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      
 
     steps:
       - name: Checkout source code
@@ -51,10 +30,13 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Conditionally build and push Docker image
-        if: ${{ github.event.head_commit.message == '' || contains(github.event.head_commit.message, matrix.service) }}
+      - name: Build and push all services
         run: |
-          IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ matrix.service }}
-          echo "🔨 Building and pushing image: $IMAGE_URI"
-          docker build -t $IMAGE_URI ${{ matrix.service }}
-          docker push $IMAGE_URI
+          SERVICES=("user-service" "board-service" "product-service" "config-service" "discovery-service" "gateway-service" "transaction-service")
+
+          for SERVICE in "${SERVICES[@]}"; do
+            IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$SERVICE
+            echo "🔨 Building and pushing $SERVICE -> $IMAGE_URI"
+            docker build -t $IMAGE_URI ./$SERVICE
+            docker push $IMAGE_URI
+          done
