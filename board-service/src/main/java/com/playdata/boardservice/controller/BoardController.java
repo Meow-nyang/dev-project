@@ -41,7 +41,8 @@ public class BoardController {
     }
 
     @GetMapping("/{boardId}")
-    public ResponseEntity<CommonResDto<DetailBoardResDto>> getDetailBoard(@PathVariable Long boardId) {
+    public ResponseEntity<CommonResDto<DetailBoardResDto>> getDetailBoard(@PathVariable("boardId") Long boardId) {
+        log.info("getDetailBoard boardId: {}", boardId);
         DetailBoardResDto detailBoard = boardService.getDetailBoard(boardId);
 
         CommonResDto<DetailBoardResDto> resDto = new CommonResDto<>(HttpStatus.OK.value(), boardId + "번 게시글 조회 완료", detailBoard);
