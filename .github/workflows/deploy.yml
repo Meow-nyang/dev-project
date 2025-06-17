@@ -58,6 +58,7 @@ jobs:
           for service in "${SERVICES[@]}"; do
             echo "Building $service"
             cd "$service"
+            chmod +x gradlew
             ./gradlew clean build -x test
             cd -
           done
