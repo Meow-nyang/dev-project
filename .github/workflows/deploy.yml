@@ -1,0 +1,52 @@
+name: Deploy MSA Services to ECR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'user-service/**'
+      - 'board-service/**'
+      - 'product-service/**'
+      - 'config-service/**'
+      - 'discovery-service/**'
+      - 'gateway-service/**'
+      - 'transaction-service/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [user-service, board-service, product-service, config-service, discovery-service, gateway-service, transaction-service]
+
+    # 해당 서비스 디렉토리만 변경되었을 때 실행
+    if: contains(join(github.event.commits.*.modified), matrix.service)
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ matrix.service }}
+          echo "Building $IMAGE_URI"
+          docker build -t $IMAGE_URI ${{ matrix.service }}
+          docker push $IMAGE_URI
