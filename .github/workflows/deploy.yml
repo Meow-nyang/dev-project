@@ -19,10 +19,14 @@ jobs:
 
     strategy:
       matrix:
-        service: [user-service, board-service, product-service, config-service, discovery-service, gateway-service, transaction-service]
-
-    # 해당 서비스 디렉토리만 변경되었을 때 실행
-    if: contains(join(github.event.commits.*.modified), matrix.service)
+        service: 
+          - user-service
+          - board-service
+          - product-service
+          - config-service
+          - discovery-service
+          - gateway-service
+          - transaction-service
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -44,9 +48,10 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
+      - name: Conditionally build and push Docker image
+        if: ${{ github.event.head_commit.message == '' || contains(github.event.head_commit.message, matrix.service) }}
         run: |
           IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/${{ matrix.service }}
-          echo "Building $IMAGE_URI"
+          echo "🔨 Building and pushing image: $IMAGE_URI"
           docker build -t $IMAGE_URI ${{ matrix.service }}
           docker push $IMAGE_URI
