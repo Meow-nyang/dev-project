@@ -34,6 +34,8 @@ jobs:
           SERVICE_DIRS=(${{ env.SERVICE_DIRS }})
           CHANGED_SERVICES=()
           COMMIT_COUNT=$(git rev-list --count HEAD)
+          
+          echo "Debug: COMMIT_COUNT = $COMMIT_COUNT"
 
           if [ "$COMMIT_COUNT" -eq 1 ]; then
             echo "Initial commit detected. All services will be built."
