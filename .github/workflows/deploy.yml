@@ -33,12 +33,13 @@ jobs:
       - name: Detect Changed Services
         id: detect
         run: |
-          SERVICE_DIRS=(${{ env.SERVICE_DIRS }})
+          # 쉼표 구분 → 공백 구분 배열로 변환
+          SERVICE_DIRS=($(echo "${{ env.SERVICE_DIRS }}" | tr ',' ' '))
           CHANGED_SERVICES=()
           COMMIT_COUNT=$(git rev-list --count HEAD)
           
           echo "Debug: COMMIT_COUNT = $COMMIT_COUNT"
-
+      
           if [ "$COMMIT_COUNT" -eq 1 ]; then
             echo "Initial commit detected. All services will be built."
             CHANGED_SERVICES=("${SERVICE_DIRS[@]}")
@@ -51,9 +52,12 @@ jobs:
               fi
             done
           fi
+      
+          # 출력용 문자열 (공백 → 쉼표로 대체해도 가능)
+          CHANGED_SERVICES_STR=$(IFS=','; echo "${CHANGED_SERVICES[*]}")
+          echo "CHANGED_SERVICES=$CHANGED_SERVICES_STR" >> $GITHUB_ENV
+          echo "changed_services=$CHANGED_SERVICES_STR" >> $GITHUB_OUTPUT
 
-          echo "CHANGED_SERVICES=${CHANGED_SERVICES[*]}" >> $GITHUB_ENV
-          echo "changed_services=${CHANGED_SERVICES[*]}" >> $GITHUB_OUTPUT
 
       - name: Build Changed Services
         if: steps.detect.outputs.changed_services != ''
