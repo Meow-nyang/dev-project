@@ -28,7 +28,7 @@ jobs:
 
       - name: Add Secret YML to Config Service
         run: |
-          echo "${{ secrets.APP_DEV_YML }}" > config-service/src/main/resources/application-dev.yml
+          echo "${{ secrets.APP_DEV_YML }}" > config-service/src/main/resources/application-secret.yml
 
       - name: Detect Changed Services
         id: detect
