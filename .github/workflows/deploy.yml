@@ -112,5 +112,6 @@ jobs:
             echo "${{ secrets.DOCKER_COMPOSE_YML }}" > "docker-compose.yml"
 
             echo "Deploying services"
+            SERVICES=$(echo "${{ steps.detect.outputs.changed_services }}" | tr ',' ' ')
             docker-compose pull ${{ steps.detect.outputs.changed_services }}
             docker-compose up -d ${{ steps.detect.outputs.changed_services }}
