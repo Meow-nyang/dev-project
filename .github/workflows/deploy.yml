@@ -89,7 +89,7 @@ jobs:
 
       - name: Deploy to EC2 via SSH
         if: steps.detect.outputs.changed_services != ''
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ env.DEPLOY_HOST }} #15.164.96.238
           username: ubuntu
