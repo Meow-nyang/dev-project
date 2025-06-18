@@ -1,5 +1,5 @@
 
-# Docker Compose 파일 포맷의 버전을 지정합니다.
+# Docker Compose 파일 포맷의 버전을 지정합니다..
 version: '3.8'
 services:
   config-service:
