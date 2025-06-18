@@ -49,8 +49,7 @@ public class CommentService {
                 )).collect(Collectors.toList());
     }
 
-    //hello7asd
-    //asdasdasdasd
+    //asd
 
 
 }
