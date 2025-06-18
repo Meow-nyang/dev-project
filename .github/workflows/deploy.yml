@@ -30,7 +30,9 @@ jobs:
         run: |
           ls -al
           echo "${{ secrets.APP_DEV_YML }}" > config-service/src/main/resources/application-secret.yml
-          cat ./config-service/src/main/resources/application-secret.yml
+          cd ./config-service/src/main/resources
+          ls -al
+          cat ./application-secret.yml
           
 
       - name: Detect Changed Services
