@@ -2,12 +2,12 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
 
 env:
   ECR_URL: 780274834139.dkr.ecr.ap-northeast-2.amazonaws.com
   REGION: ap-northeast-2
-  DEPLOY_HOST: 172.31.6.46
+  DEPLOY_HOST: 15.164.96.238
   SERVICE_DIRS: config-service,discovery-service,gateway-service,user-service,board-service,product-service,transaction-service
 
 jobs:
@@ -91,7 +91,7 @@ jobs:
         if: steps.detect.outputs.changed_services != ''
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: 15.164.96.238 #${{ env.DEPLOY_HOST }}
+          host: ${{ env.DEPLOY_HOST }} #15.164.96.238
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
