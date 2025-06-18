@@ -103,7 +103,7 @@ jobs:
             aws ecr get-login-password --region ${{ env.REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_URL }}
 
             echo "Update docker-compose.yml"
-            echo "${{ secrets.DOCKER_COMPOSE_YML }}" > docker-compose.yml
+            echo "${{ secrets.DOCKER_COMPOSE_YML }}" > ./docker-compose.yml
 
             echo "Deploying services"
             docker-compose pull ${{ steps.detect.outputs.changed_services }}
