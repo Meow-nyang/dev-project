@@ -113,5 +113,5 @@ jobs:
 
             echo "Deploying services"
             SERVICES=$(echo "${{ steps.detect.outputs.changed_services }}" | tr ',' ' ')
-            docker-compose pull ${{ steps.detect.outputs.changed_services }}
-            docker-compose up -d ${{ steps.detect.outputs.changed_services }}
+            docker-compose pull $SERVICES
+            docker-compose up -d $SERVICES
