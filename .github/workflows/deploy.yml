@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [develop]
+    branches: [main]
 
 env:
   ECR_URL: 780274834139.dkr.ecr.ap-northeast-2.amazonaws.com
@@ -89,7 +89,7 @@ jobs:
 
       - name: Deploy to EC2 via SSH
         if: steps.detect.outputs.changed_services != ''
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ env.DEPLOY_HOST }} #15.164.96.238
           username: ubuntu
