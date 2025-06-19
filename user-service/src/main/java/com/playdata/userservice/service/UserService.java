@@ -45,4 +45,11 @@ public class UserService {
 
         return user;
     }
+
+    public User getUserInfo(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(
+            () -> new EntityNotFoundException("User Not Found")
+        );
+        return user;
+    }
 }

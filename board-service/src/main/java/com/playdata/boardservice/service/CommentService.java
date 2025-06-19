@@ -1,5 +1,6 @@
 package com.playdata.boardservice.service;
 
+import com.playdata.boardservice.client.UserServiceClient;
 import com.playdata.boardservice.dto.CommentReqDto;
 import com.playdata.boardservice.dto.CommentResDto;
 import com.playdata.boardservice.entity.Board;
@@ -22,14 +23,17 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final BoardRepository boardRepository;
+    private final UserServiceClient userServiceClient;
 
-    public void createComment(Long boardId, CommentReqDto commentReqDto, String author) {
+    public void createComment(Long boardId, CommentReqDto commentReqDto, String email) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
+        String userName = userServiceClient.getUserInfo(email);
+
         Comment comment = Comment.builder()
                 .content(commentReqDto.getContent())
-                .author(author)
+                .author(userName)
                 .board(board)
                 .build();
 

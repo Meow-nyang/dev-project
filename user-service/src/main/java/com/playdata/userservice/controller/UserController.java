@@ -99,4 +99,17 @@ public class UserController {
         return ResponseEntity.ok().body(new CommonResDto<>(HttpStatus.OK.value(), "새 토큰 발급됨", map));
     }
 
+    @PostMapping("/userInfo")
+    public ResponseEntity<?> getUserInfo(Map<String, String> map) {
+        String email = map.get("email");
+        log.info("요청 Email: {}", email);
+        User userInfo = userService.getUserInfo(email);
+
+        return ResponseEntity.ok().body(userInfo.getName());
+
+    }
+
+
+
+
 }
