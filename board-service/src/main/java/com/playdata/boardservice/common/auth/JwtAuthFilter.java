@@ -20,6 +20,9 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
         String email = request.getHeader("X-User-Email");
         String name = request.getHeader("X-User-Name");
 

@@ -28,7 +28,7 @@ public class CommentController {
             @RequestBody CommentControllerReqDto dto) {
 
         log.info("name: {}, email: {}", token.getName(), token.getEmail());
-        commentService.createComment(dto.getBoardId(), new CommentReqDto(dto.getContent()), token.getName());
+        commentService.createComment(dto.getBoardId(), new CommentReqDto(dto.getContent()), token.getEmail());
         CommonResDto<String> resDto = new CommonResDto<>(200, "comment created", "OK!");
 
         return new ResponseEntity<>(resDto, HttpStatus.OK);
