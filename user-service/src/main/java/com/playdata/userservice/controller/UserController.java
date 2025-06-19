@@ -100,7 +100,7 @@ public class UserController {
     }
 
     @PostMapping("/userInfo")
-    public ResponseEntity<?> getUserInfo(Map<String, String> map) {
+    public ResponseEntity<?> getUserInfo(@RequestBody Map<String, String> map) {
         String email = map.get("email");
         log.info("요청 Email: {}", email);
         User userInfo = userService.getUserInfo(email);
