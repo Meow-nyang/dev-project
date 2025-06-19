@@ -12,7 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +31,9 @@ public class CommentService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
-        String userName = userServiceClient.getUserInfo(email);
+        Map<String, String> map = new HashMap<>();
+        map.put("email", email);
+        String userName = userServiceClient.getUserInfo(map);
 
         Comment comment = Comment.builder()
                 .content(commentReqDto.getContent())
