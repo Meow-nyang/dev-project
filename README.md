@@ -6,7 +6,7 @@
 - **핵심 기술**: Docker, GitHub Actions, EC2, S3 등
 - **목표**: 기존에 작성된 MSA 구조에서 DevOps 파이프라인 구축
 - **_팀장:_** 주영찬
-- **_팀원:_** 김사무엘
+- **_팀원:_** 주영찬
 
 ---
 
@@ -89,7 +89,7 @@
   REQ-F-001: 서비스 디스커버리: 각 서비스가 유레카 서버에 자동으로 등록하고 서로를 찾을 수 있어야 합니다. (모든 서비스, 유레카 서버)
   REQ-F-002: API 게이트웨이: 모든 외부 요청은 API 게이트웨이를 통해 들어오며, 여기서 인증/보안/라우팅 등 공통 처리를 담당해야 합니다. (API 게이트웨이, 모든 서비스)
   REQ-F-003: 중앙 설정 관리: 서비스별 설정(DB 정보 등)을 구성 서비스에서 한 곳에 모아 관리하고, 동적으로 적용 가능해야 합니다. (구성 서비스, 모든 서비스)
-  REQ-F-004: 통합 로깅/모니터링 데이터 수집: 모든 서비스의 로그와 성능 데이터를 한 곳에 모아 관리해야 합니다. (모든 서비스, EKS)
+  REQ-F-004: 통합 로깅/모니터링 데이터 수집: 모든 서비스의 로그와 성능 데이터를 한 곳에 모아 관리해야 합니다.
 
   ```
 
@@ -134,35 +134,12 @@
 
 
 1. **Service Architecture Diagram**: 마이크로서비스 간 통신
-2. **Infrastructure Diagram**: AWS EKS 인프라 구성
+2. **Infrastructure Diagram**: AWS 인프라 구성
 3. **CI/CD Pipeline Diagram**: 배포 파이프라인 플로우
 
 ---
 
 ### 5. 테스트 케이스
-
-#### ✅ 테스트 유형별 케이스
-
-- **Unit Test**
-
-  - 각 마이크로서비스 내 비즈니스 로직 테스트
-  - 커버리지 80% 이상 목표
-
-- **Integration Test**
-
-  - 서비스 간 API 통신 테스트
-  - 데이터베이스 연동 테스트
-
-- **End-to-End Test**
-
-  - 전체 워크플로우 테스트
-  - 사용자 시나리오 기반 테스트
-
-- **Infrastructure Test**
-  - 컨테이너 빌드/실행 테스트
-  - Kubernetes 배포 테스트
-  - CI/CD 파이프라인 테스트
-
 
 Test-01: Github Actions
 - 테스트 유형: Infrastructure Test
@@ -182,7 +159,7 @@ Github Actions Test
 <br> <br/>
 
 
-Test-01: Rds Connection Test
+Test-02: Rds Connection Test
 - 테스트 유형: Integration Test
 - 대상 서비스: Rds, EC2
 - 전제조건: S3 버킷, Rds 생성
@@ -193,7 +170,7 @@ Test-01: Rds Connection Test
 - 우선순위: Middle
 
 
-Test-02: Redis Test
+Test-03: Redis Test
 - 테스트 유형: Integration Test
 - 대상 서비스: Redis, EC2
 - 전제조건: Docker 이미지
@@ -207,6 +184,49 @@ Test-02: Redis Test
 <br> <br/>
 
 
+Test-04: EC2 Image 생성 Test
+- 테스트 유형: Infrastructure Test
+- 대상 서비스: EC2, Docker-compose
+- 전제조건: EC2 생성
+- 테스트 단계:
+  1. 변경된 내용만 푸쉬 및 빌드
+  2. 이미지 생성 및 컨테이너 동작 확인
+- 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
+- 우선순위: High
+
+<img src="image/docker-images.png" alt="Redis Test" width=650 />
+<br> <br/>
+
+Test-05: EC2 Container 동작 및 imgae Test
+- 테스트 유형: Infrastructure Test
+- 대상 서비스: EC2, Docker-compose
+- 전제조건: EC2 생성
+- 테스트 단계:
+  1. 변경된 내용만 푸쉬 및 빌드
+  2. 이미지 생성 및 컨테이너 동작 확인
+- 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
+- 우선순위: High
+
+Test-06: Front Login Test
+- 테스트 유형: Unit Test
+- 대상 서비스: EC2, Docker-compose
+- 전제조건: EC2 생성
+- 테스트 단계:
+  1. 변경된 내용만 푸쉬 및 빌드
+  2. 이미지 생성 및 컨테이너 동작 확인
+- 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
+- 우선순위: High
+
+Test-06: Front Comment Test
+- 테스트 유형: Front Login Test
+- 대상 서비스: EC2, Docker-compose
+- 전제조건: EC2 생성
+- 테스트 단계:
+  1. 변경된 내용만 푸쉬 및 빌드
+  2. 이미지 생성 및 컨테이너 동작 확인
+- 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
+- 우선순위: High
+
 ---
 ### 6. 테스트 결과서
 
@@ -218,6 +238,7 @@ Test-02: Redis Test
 
 
 ## 테스트 결과 요약
-- 전체 통과율: 03/03 (100%)
+- 전체 통과율: 05/05 (100%)
 - Integration Test: 02/02 (100%)
-- Infrastructure Test: 01/01 (100%)
+- Infrastructure Test: 02/02 (100%)
+- Unit Test : 01/01 (100%)
