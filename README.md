@@ -241,6 +241,7 @@ Test-08: Front Product Test
   1. 게시글 작성 및 이미지 첨부
 - 성공 기준: 게시글 및 작성자명 정상 작동
 - 우선순위: Middle
+- 테스트 실패 , 작성자명 ??? 로 뜸
 
 <img src="image/product.png" alt="Redis Test" width=650 />
 <br> <br/>
