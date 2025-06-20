@@ -1,255 +1,270 @@
-# Flea-Market 서비스 프로젝트
+# DevOps 단위 프로젝트 산출물 작성 가이드
 
-## 개요
+## 📋 프로젝트 개요
 
-**_프로젝트명_**: Flea-Market
+- **기반 프로젝트**: 기존 Flea-Market 서비스 프로젝트
+- **핵심 기술**: Docker, GitHub Actions, EC2, S3 등
+- **목표**: 기존에 작성된 MSA 구조에서 DevOps 파이프라인 구축
+- **_팀장:_** 주영찬
+- **_팀원:_** 김사무엘
 
-**_프로젝트 기간_**: 2025-05-09 ~ 2025-05-15
+---
 
-**_팀장:_** 배주연
 
-**_팀원:_** 구현희, 김사무엘, 주영찬
 
-<br>
-<br>
+### 1. 기획서
 
-1.**프로젝트**
 
-```
-본 프로젝트는 마이크로 서비스 아키텍처를 적용한 온라인 중고 거래 서비스 플랫폼을 개발합니다.
-사용자가 물건을 게시물 형식으로 등록해서 판매하고, 다른 사용자가 올린 상품을 구매할 수 있는 기능을 제공합니다.
-```
+- **MSA 전환 계획**
 
-<br>
+  사용자 서비스, 상품 서비스, 게시글 서비스, 거래 서비스, Config 서비스, API 게이트웨이, 유레카 서버 등을 기존 모놀리식 구조에서 분리할 계획 입니다.
 
-2.**목표 및 범위**
+- **서비스 간 통신 방식 (REST API)**
 
-```
-이 프로젝트의 목표는 스프링 부트 구조를 이해하고, MSA를 통해 확장성과 유지보수성이 뛰어난 
-서비스를 구현하는 것이 목표입니다. 또한 프론트엔드와의 연동에 익숙해져서 서비스 전반의 흐름을
-이해하는 것입니다.
-```
+  서버스 간 통신 설계 게시글 서비스 -> 제품 서비스
+  목적: 유저가 등록한 게시글의 제품을 product table에 저장
+  통신 방식: REST API 호출 (Feign Client)
+  엔드포인트: /product-service/product/create
 
-<br>
+  거래 서비스 -> 게시글 서비스
+  목적: 게시글의 거래 상태 변경
+  통신 방식: REST API 호출 (Feign Client)
+  엔드포인트: /board-service/board/{boardId}
 
-3.**타겟 사용자**
+  거래 서비스 -> 제품 서비스
+  목적: 제품의 거래 상태 변경
+  통신 방식: REST API 호출 (Feign Client)
+  엔드포인트: /product-service/product/{prodId}
 
-```
-판매자, 구매자
-```
+- **DevOps 도구 적용 계획**
 
-<br>
+  - 사용할 DevOps 도구 선택 근거 (Docker, GitHub Actions, EC2)
 
-4.**주요 기능 목록**
+         Docker: 앱을 컨테이너에 담아 어디서든 똑같이 실행 할 수 있습니다.
 
-```
-사용자 등록/로그인, 상품 등록, 상품 거래, 내 정보 페이지 조회
-```
+         GitHub Actions: 개발 과정을 자동화하고 빠르게 배포 할 수 있습니다.
 
-<br>
+         EC2: SSH로 직접 접근 가능하며, Docker 및 다양한 인프라 구성을 자유롭게 구성할 수 있음.
 
-5.**기술 스택**
 
-```
-Spring Boot, Spring cloud, React, Css, MySQL, AWS (EC2 S3) , Redis
-```
+- CI/CD 파이프라인 구성 계획
 
-<br>
+      코드 관리 (GitHub) 
+      - 모든 코드는 GitHub에 저장하고, GitFlow처럼 main 브랜치는 항상 배포 가능한 상태를 유지합니다. 
+      새 기능 개발은 새 브랜치에서 진행하고, **Pull Request (PR)**로 코드 리뷰를 꼭 거칩니다.
 
-6.**마이크로서비스 구조**
+      CI (지속적 통합) - GitHub Actions
+      - 코드를 main 브랜치에 올리거나 PR을 만들 때마다 코드 컴파일 후 Docker 이미지로 만들고 테스트 후  Docker 이미지를 AWS ECR에 저장합니다.
 
-```
-사용자 서비스, 상품 서비스, 게시글 서비스, 거래 서비스, 구성(설정) 서비스, API 게이트웨이, 유레카 서버
-```
+      CD (지속적 배포) - GitHub Actions & EKS
+      - CI 성공 후 main 브랜치에 코드가 병합되면 GitHub Actions가 AWS EKS 클러스터에 접속하여 배포를 지시하고 무중단 업데이트를 실시합니다.
+- 모니터링 및 로깅 전략
 
-<br>
+      모니터링
+      -서버/컨테이너: CPU, 메모리 사용량, 컨테이너 잘 돌아가는지.
 
-##
+      -앱 성능: 사용자 요청 얼마나 빨리 응답하는지, 에러는 없는지.
+      
+      -서비스 간 연결: 각 서비스들이 서로 통신 잘하는지.
 
-<br>
+      로깅
+      -각 서비스에서 발생하는 모든 활동 기록 (오류 메시지, 사용자 로그인, 거래 내역 등).
+      
+      -Fluent Bit: EKS 컨테이너에서 발생하는 모든 로그를 자동으로 모읍니다.
+      
+      -AWS CloudWatch Logs: 모은 로그들을 AWS의 중앙 저장소에 안전하게 보관하고 서비스별로 로그를 나눠서 관리합니다.
 
-**===== 사용자 서비스 API =====**
+- **배포 전략**
+  - GitHub Actions 적용 방안
 
-1. 회원가입
+        -배포 트리거: GitHub Actions에서 Docker 이미지 빌드 후, 배포 설정 파일의 이미지 버전을 Git에 업데이트하는 PR을 생성합니다.
 
-- URL: POST /user-service/user/signup
-- Request Body :
+        -변경된 부분만 찾아서 푸쉬 및 
 
-```json
-{
-	“name”: “박영희”,
-	 “email”: “park9876@naver.com”,
-	 “password”: “ppp1111!”
-}
-```
+- 기대 효과 및 성과 지표
 
-- Response ( 성공 - 201 Created )
+        -기대 효과: 개발 속도 향상, 배포 효율 증대, 서비스 안정성 향상, 비용 절감, 팀 협업 강화입니다. 
+        -성과 지표: 배포 주기, 배포 빈도, 배포 성공률, 오류율, 장애 발생률을 참고 하도록 합니다. 
 
-```json
-{
-    "statusCode": 201,
-    "statusMessage": "회원가입 성공",
-    "result": “박영희”
-}
-```
+---
 
-2.  로그인
+### 2. 요구사항 정의서
 
-- URL: POST /user-service/user/login
-- Request Body:
+#### 📌 작성 목적
 
-```json
-{
-    "email": “park9876@naver.com",
-    "password": “ppp1111!”
-}
-```
-
-- Response (성공 - 200 OK):
-
-```json
-{
-    "statusCode": 200,
-    "statusMessage": "로그인 완료",
-    "result":
-    {
-        "name": "박영희",
-        "id": 4,
-        "email": "abc1234@naver.com",
-        "token": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOi…”,
-        "refreshToken": "eyJhbGciOiJIUzM4NCJ9.eyJ…”
-    }
-}
-```
-
-3. Refresh
-
-- URL: POST /user-service/user/refresh
-- Request Body:
-
-```json
-{
-    “id” :“4”,
-    "password": “ppp1111!”
-     "refreshToken": "eyJhbGciOiJIUzM4NCJ9.eyJ…”
-}
-```
-
-- Response (성공 - 200 OK):
-
-```json
-{
-    "statusCode": 200,
-    "statusMessage": "로그인 완료",
-    "result":
-    {
-        "name": "박영희",
-        "id": 4,
-        "email": "abc1234@naver.com",
-        "token": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOi…”,
-        "refreshToken": "eyJhbGciOiJIUzM4NCJ9.eyJ…”
-    }
-}
-```
-
-**===== 게시글 서비스 API =====**
-
-1. 게시글 등록
-
-- URL: POST /board-service/board/create
-- Request Body :
-
-```json
-{
-  "title": "당근",
-  "price": 1000,
-  "imageUrl": "https://flea-market-backend-bucket.s3.ap-northeast-2.amazonaws.com/1e7ca672-f73f-4171-9e75-64ee496741ba_%E1%84%86%E1%85%A1%E1%84%85%E1%85%AE.webp",
-  "category": "음식",
-  "tags": ["몰라"]
-}
-```
-
-- Response ( 성공 - 201 Created )
-
-```json
-{
-  "statusCode": 201,
-  "statusMessage": "게시글 생성 완료",
-  "result": {
-    "title": "당근",
-    "price": 1000,
-    "imageUrl": "https://flea-market-backend-bucket.s3.ap-northeast-2.amazonaws.com/1e7ca672-f73f-4171-9e75-64ee496741ba_%E1%84%86%E1%85%A1%E1%84%85%E1%85%AE.webp",
-    "category": "음식",
-    "tags": ["몰라"],
-    "date": null
-  }
-}
-```
-
-2. 게시글 삭제
-
-- URL : DELETE /board-service/board/{boardId}
-- Response ( 성공 - 201 Created )
-
-```json
-{
-  "statusCode": 200,
-  "statusMessage": "게시글 삭제 완료",
-  "result": 3
-}
-```
-
-<br>
-
-# 전체 API 모음
-
-https://www.notion.so/api-1ed63eaa605180bea1bedb7d9834bd3b
-
-
-
-<br>
-
-2. **서비스 간 통신 설계**: 마이크로서비스 간의 통신 방식을 정의합니다.
-
-서버스 간 통신 설계 <br>
-게시글 서비스 -> 제품 서비스 <br>
-목적: 유저가 등록한 게시글의 제품을 product table에 저장 <br>
-통신 방식: REST API 호출 (Feign Client) <br>
-엔드포인트: /product-service/product/create 
-
-거래 서비스 -> 게시글 서비스 <br>
-목적: 게시글의 거래 상태 변경 <br>
-통신 방식: REST API 호출 (Feign Client) <br>
-엔드포인트: /board-service/board/{boardId}
-
-거래 서비스 -> 제품 서비스 <br>
-목적: 제품의 거래 상태 변경 <br>
-통신 방식: REST API 호출 (Feign Client) <br>
-엔드포인트: /product-service/product/{prodId}
-
-<br> <br>
-
-## UI 화면 설계
-
-<img src="image/ui.png" alt="사이트 이미지" width=650 />
+DevOps 도입으로 인한 새로운 기능적/비기능적 요구사항 정의
+
+
+- 기능적 요구사항 (새로운 기능)
+  ```
+
+  REQ-F-001: 서비스 디스커버리: 각 서비스가 유레카 서버에 자동으로 등록하고 서로를 찾을 수 있어야 합니다. (모든 서비스, 유레카 서버)
+  REQ-F-002: API 게이트웨이: 모든 외부 요청은 API 게이트웨이를 통해 들어오며, 여기서 인증/보안/라우팅 등 공통 처리를 담당해야 합니다. (API 게이트웨이, 모든 서비스)
+  REQ-F-003: 중앙 설정 관리: 서비스별 설정(DB 정보 등)을 구성 서비스에서 한 곳에 모아 관리하고, 동적으로 적용 가능해야 합니다. (구성 서비스, 모든 서비스)
+  REQ-F-004: 통합 로깅/모니터링 데이터 수집: 모든 서비스의 로그와 성능 데이터를 한 곳에 모아 관리해야 합니다. (모든 서비스, EKS)
+
+  ```
+
+
+- 비기능적 요구사항 (시스템 품질)
+  ```
+ 
+  REQ-NF-01: 가용성 (99.9% 이상): 서비스가 99.9% 이상 항상 작동해야 합니다
+  측정: 월별 가동 시간.
+  검증: 모니터링, 장애 시나리오 테스트.
+  REQ-NF-02: 성능 (응답 시간): 주요 기능(로그인, 조회 등)의 응답 시간이 특정 목표치(예: 500ms) 이내여야 합니다.
+  측정: 각 API 응답 시간.
+  검증: 성능 테스트.
+  REQ-NF-03: 보안 (컨테이너/클러스터): Docker 이미지에 취약점이 없어야 합니다.
+  측정: 이미지 취약점 없음.
+  ```
+
+- 운영 요구사항 (자동화 및 관리)
+
+  ```
+  REQ-OP-01: CI/CD 자동화: 코드 변경부터 EC2 배포까지 모든 과정이 GitHub Actions로 자동화되어야 합니다.
+  측정: 배포 주기, 성공률.
+  검증: 워크플로우 실행 확인.
+
+  REQ-OP-02: 빠른 롤백: 문제 발생 시 5분 이내로 이전 안정적인 버전으로 되돌릴 수 있어야 합니다.
+  측정: 롤백 시간.
+  검증: 롤백 테스트.
+
+
+  ```
+
+
+
+---
+
+### 3. 소스코드 (GitHub Repository에 업로드)
+  ```
+  https://github.com/Meow-nyang/dev-project
+
+  ```
+
+### 4. MSA 아키텍처 설계도
+
+
+<img src="image/architecture.png" alt="CI/CD 아키텍처" width=700 />
 <br> <br/>
 
-<img src="image/ui2.png" alt="사이트 이미지" width=650 />
+
+1. **Service Architecture Diagram**: 마이크로서비스 간 통신
+2. **Infrastructure Diagram**: AWS EKS 인프라 구성
+3. **CI/CD Pipeline Diagram**: 배포 파이프라인 플로우
+
+---
+
+### 5. 테스트 케이스
+
+#### ✅ 테스트 유형별 케이스
+
+- **Unit Test**
+
+  - 각 마이크로서비스 내 비즈니스 로직 테스트
+  - 커버리지 80% 이상 목표
+
+- **Integration Test**
+
+  - 서비스 간 API 통신 테스트
+  - 데이터베이스 연동 테스트
+
+- **End-to-End Test**
+
+  - 전체 워크플로우 테스트
+  - 사용자 시나리오 기반 테스트
+
+- **Infrastructure Test**
+  - 컨테이너 빌드/실행 테스트
+  - Kubernetes 배포 테스트
+  - CI/CD 파이프라인 테스트
+
+```
+Test-01: Github Actions
+- 테스트 유형: Infrastructure Test
+- 대상 서비스: board-service
+- 전제조건: S3 버킷, EC2 생성, Secrets 설정
+- 테스트 단계:
+  1. 변경된 내용만 푸쉬
+  2. EC2 서버에 빌드
+- 성공 기준: 변경된 서비스만 빌드하여 EC2 서버에 이미지 생성
+- 우선순위: High
+```
+
+Github Actions Test
+<img src="image/test.png" alt="CI/CD 아키텍처" width=650 />
 <br> <br/>
 
-## 테스트 케이스
+```
+Test-01: Rds Connection Test
+- 테스트 유형: Integration Test
+- 대상 서비스: Rds, EC2
+- 전제조건: S3 버킷, Rds 생성
+- 테스트 단계:
+  1. Mysql Workbench 에서 접속 테스트
+  2. EC2 서버와 연결
+- 성공 기준: DB 접속 후 파일 업로드
+- 우선순위: Middle
+```
 
-https://docs.google.com/spreadsheets/d/1DlyYJ0suZVJMFSs_Ha9LRBqOKzVu4d8D9O_uQULe4dg/edit?gid=0#gid=0
+Test-02: Redis Test
+- 테스트 유형: Integration Test
+- 대상 서비스: Redis, EC2
+- 전제조건: Docker 이미지
+- 테스트 단계:
+  1. ssh -i로 EC2 연결
+  2. exec 으로 redis 접속
+- 성공 기준: PING -> PONG 확인하기
+- 우선순위: Low
+```
 
 
-## 테스트 결과
 
-https://docs.google.com/spreadsheets/d/1DlyYJ0suZVJMFSs_Ha9LRBqOKzVu4d8D9O_uQULe4dg/edit?gid=0#gid=0
 
-  <img src="image/sign.png" alt="사이트 이미지" width=650 />
-<br> <br/>
-  <img src="image/login.png" alt="사이트 이미지" width=650 />
-<br> <br/>
-  <img src="image/board.png" alt="사이트 이미지" width=650 />
-<br> <br/>
-  <img src="image/delete.png" alt="사이트 이미지" width=650 />
+---
+
+### 6. 테스트 결과서
+
+
+#### ✅ 포함 내용
+
+- **테스트 실행 개요**
+
+  - 테스트 실행 일시
+  - 테스트 환경 정보
+  - 실행한 테스트 케이스 수
+
+- **테스트 결과 요약**
+
+  - 전체 테스트 통과율
+  - 유형별 테스트 결과 (Unit/Integration/E2E)
+  - 실패한 테스트 케이스 목록
+
+- **상세 테스트 결과**
+
+  - 각 테스트 케이스별 실행 결과
+  - 실패 케이스의 원인 분석
+  - 스크린샷 또는 로그 첨부
+
+- **성능 테스트 결과** (선택사항)
+  - 응답시간 측정 결과
+  - 부하 테스트 결과
+  - 리소스 사용량 분석
+
+#### 📄 작성 형식
+
+```
+## 테스트 실행 개요
+- 실행 일시: 2025-06-19 15:00
+- 테스트 환경: EC2
+- 실행자: 1팀/주영찬
+
+## 테스트 결과 요약
+- 전체 통과율: 03/03 (100%)
+- Integration Test: 02/02 (100%)
+- Infrastructure Test: 01/01 (100%)
+
+```
+
+---
