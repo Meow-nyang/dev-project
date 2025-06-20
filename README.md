@@ -207,25 +207,43 @@ Test-05: EC2 Container 동작 및 imgae Test
 - 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
 - 우선순위: High
 
+
 Test-06: Front Login Test
-- 테스트 유형: Unit Test
-- 대상 서비스: EC2, Docker-compose
-- 전제조건: EC2 생성
+- 테스트 유형: Front Test
+- 대상 서비스: EC2 , User-service
+- 전제조건: EC2 접속
 - 테스트 단계:
-  1. 변경된 내용만 푸쉬 및 빌드
-  2. 이미지 생성 및 컨테이너 동작 확인
-- 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
+  1. 접속 및 로그인
+- 성공 기준: 로그인 완료
 - 우선순위: High
 
-Test-06: Front Comment Test
-- 테스트 유형: Front Login Test
-- 대상 서비스: EC2, Docker-compose
-- 전제조건: EC2 생성
+<img src="image/login2.png" alt="Redis Test" width=650 />
+<br> <br/>
+
+
+Test-07: Front Comment Test
+- 테스트 유형: Front Test
+- 대상 서비스: EC2, Board-service
+- 전제조건: 로그인
 - 테스트 단계:
-  1. 변경된 내용만 푸쉬 및 빌드
-  2. 이미지 생성 및 컨테이너 동작 확인
-- 성공 기준: 이미지가 빌드완료된 시점, Status up 확인
-- 우선순위: High
+  1. 댓글 작성
+- 성공 기준: 댓글 내용 및 작성자 정상 작동
+- 우선순위: low
+
+<img src="image/comment.png" alt="Redis Test" width=650 />
+<br> <br/>
+
+Test-08: Front Product Test
+- 테스트 유형: Front Test
+- 대상 서비스: EC2, Product-service
+- 전제조건: 로그인
+- 테스트 단계:
+  1. 게시글 작성 및 이미지 첨부
+- 성공 기준: 게시글 및 작성자명 정상 작동
+- 우선순위: Middle
+
+<img src="image/product.png" alt="Redis Test" width=650 />
+<br> <br/>
 
 ---
 ### 6. 테스트 결과서
@@ -238,7 +256,7 @@ Test-06: Front Comment Test
 
 
 ## 테스트 결과 요약
-- 전체 통과율: 05/05 (100%)
+- 전체 통과율: 07/08 (90%)
 - Integration Test: 02/02 (100%)
 - Infrastructure Test: 02/02 (100%)
-- Unit Test : 01/01 (100%)
+- Unit Test : 03/04 (75%)
