@@ -175,8 +175,10 @@ Test-01: Github Actions
 - 우선순위: High
 
 
+
 Github Actions Test
-<img src="image/test.png" alt="CI/CD 아키텍처" width=650 />
+
+<img src="image/test.png" alt="CI/CD 아키텍처" width=750 />
 <br> <br/>
 
 
